@@ -4,13 +4,14 @@ defmodule MixSafe.MixProject do
   def project do
     [
       app: :mix_safe,
-      version: "0.2.0",
+      version: "1.0.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: "SAFE security vulnerability scanner for Elixir/Mix projects",
       source_url: "https://github.com/erlang-solutions/safe-mix-plugin",
       package: package(),
       deps: deps(),
+      docs: docs(),
       dialyzer: dialyzer(),
       test_coverage: [
         ignore_modules: [
@@ -29,10 +30,11 @@ defmodule MixSafe.MixProject do
 
   defp package do
     [
+      organization: "esl_security",
       maintainers: ["Erlang Solutions"],
       licenses: ["Apache-2.0"],
-      links: %{"GitHub" => "https://github.com/erlang-solutions/safe-mix-plugin"},
-      files: ~w(lib mix.exs README.md LICENSE* .formatter.exs)
+      links: %{"GitHub" => "https://github.com/Erlang-Solutions/mix_safe"},
+      source_url: "https://github.com/Erlang-Solutions/mix_safe"
     ]
   end
 
@@ -43,6 +45,13 @@ defmodule MixSafe.MixProject do
       {:jason, "~> 1.4"},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: :dev, runtime: false}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      extras: ["README.md"]
     ]
   end
 
