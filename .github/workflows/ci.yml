@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18'
+          otp-version: '27'
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-otp-27-elixir-1.18-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-27-elixir-1.18-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Check formatting
+        run: mix format --check-formatted
+
+  dialyzer:
+    name: Dialyzer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18'
+          otp-version: '27'
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-otp-27-elixir-1.18-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-27-elixir-1.18-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Restore Dialyzer PLT cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            priv/plts
+            ~/.cache/dialyxir
+          key: ${{ runner.os }}-otp-27-elixir-1.18-plt-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-27-elixir-1.18-plt-
+
+      - name: Run Dialyzer
+        run: mix dialyzer
+
+  test:
+    name: OTP ${{ matrix.otp-version }} / ${{ matrix.os }} / ${{ matrix.elixir-version }} 
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        elixir-version: [1.18.x, 1.17.x, 1.16.x, 1.15.x, 1.14.x]
+        include:
+          - elixir-version: 1.18.x
+            otp-version: 28.x
+          - elixir-version: 1.18.x
+            otp-version: 27.x
+          - elixir-version: 1.18.x
+            otp-version: 26.x
+          # older versions
+          - elixir-version: 1.17.x
+            otp-version: 26.x
+          - elixir-version: 1.16.x
+            otp-version: 26.x
+          - elixir-version: 1.15.x
+            otp-version: 26.x
+          - elixir-version: 1.14.x
+            otp-version: 25.x
+          # arm64 Linux — aarch64 - no need to test all combinations on this platform, just one
+          - os: ubuntu-24.04-arm
+            elixir-version: 1.18.x
+            otp-version: 26.x
+        
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir-version }}
+          otp-version: ${{ matrix.otp-version }}
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-otp-${{ matrix.otp-version }}-elixir-${{ matrix.elixir-version }}-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-${{ matrix.otp-version }}-elixir-${{ matrix.elixir-version }}-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile
+
+      - name: Run tests with coverage
+        run: mix test --cover
+
+  integration-test:
+    name: Integration / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15-intel, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18'
+          otp-version: '27'
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-otp-27-elixir-1.18-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-27-elixir-1.18-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run integration tests
+        run: python3 scripts/integration_test.py -v

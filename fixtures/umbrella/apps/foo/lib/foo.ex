@@ -1,0 +1,2 @@
+defmodule FooApp do
+end

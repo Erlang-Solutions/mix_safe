@@ -1,0 +1,21 @@
+{
+  "output": [
+    "stdio",
+    "file"
+  ],
+  "version": "1.1",
+  "project": {
+    "name": "single_app",
+    "type": "beam",
+    "paths": [
+      "_build/dev/lib/single_app/ebin"
+    ],
+    "apps": [
+      {
+        "name": "single_app",
+        "app_file": "_build/dev/lib/single_app/ebin/single_app.app",
+        "additional_includes": []
+      }
+    ]
+  }
+}

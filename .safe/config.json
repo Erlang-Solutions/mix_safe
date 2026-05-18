@@ -1,0 +1,22 @@
+{
+  "output": [
+    "stdio",
+    "file"
+  ],
+  "version": "1.1",
+  "project": {
+    "name": "mix_safe",
+    "type": "beam",
+    "config_env": "dev",
+    "apps": [
+      {
+        "name": "mix_safe",
+        "additional_includes": []
+      }
+    ],
+    "paths": [
+      "_build/dev/lib"
+    ],
+    "config_files": []
+  }
+}

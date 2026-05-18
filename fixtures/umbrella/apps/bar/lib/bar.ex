@@ -1,0 +1,2 @@
+defmodule BarApp do
+end
