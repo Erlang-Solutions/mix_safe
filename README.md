@@ -1,4 +1,5 @@
-<h1>
+# SAFE - Security Analysis For Elixir
+<br />
 <picture style="margin-right: 15px; float: left;">
   <source
     media="(prefers-color-scheme: dark)"
@@ -19,10 +20,8 @@
     align="left"
   />
 </picture>
-  Security Analysis For Elixir
-</h1>
+A Mix task that brings [SAFE](https://safe-docs.erlang-solutions.com/) security vulnerability scanning to Elixir/Mix projects. ó
 
-A Mix task that brings [SAFE](https://safe-docs.erlang-solutions.com/) security vulnerability scanning to Elixir/Mix projects. It mirrors the behaviour of the [SAFE rebar3 plugin](https://github.com/erlang-solutions/safe-rebar-plugin), using Elixir idioms throughout.
 
 ## Installation
 
@@ -31,7 +30,7 @@ Add the plugin to your `mix.exs` dependencies:
 ```elixir
 defp deps do
   [
-    {:safe_mix_plugin, "~> 1.0", only: [:dev, :test], runtime: false}
+    {:mix_safe, "~> 1.0", only: [:dev, :test], runtime: false}
   ]
 end
 ```
@@ -89,14 +88,6 @@ $ mix safe analyse
 * SAFE analysis complete - no vulnerabilities found
 ```
 
-**3. Check versions**
-
-```
-$ mix safe version
-* safe-mix-plugin version: 1.0.0
-* SAFE version: 1.5.1
-```
-
 ## Binary management
 
 The SAFE binary is downloaded automatically on first use and stored at:
@@ -105,9 +96,8 @@ The SAFE binary is downloaded automatically on first use and stored at:
 <project_root>/_build/safe/safe
 ```
 
-The resolved version is pinned in `safe.lock` at the project root (commit this file to version control). On subsequent runs the binary is not re-downloaded as long as the file is present.
+The resolved version is pinned in `safe.lock` at the project root (commit this file to version control). On later runs the binary is not re-downloaded as long as the file is present.
 
-The version constraint is `~> 1.5.0` (patch-level lock).
 
 ### Skipping the download
 
@@ -119,7 +109,7 @@ Useful in CI pipelines where you want to cache the binary separately from the sc
 
 ## Configuration file
 
-`mix safe fingerprint` generates `.safe/config.json` in the project root. The format is identical to the rebar3 plugin so the file can be shared across both tools.
+`mix safe fingerprint` generates `.safe/config.json` in the project root. 
 
 ```json
 {
@@ -145,15 +135,6 @@ You can edit this file before re-running. If it exists when `mix safe fingerprin
 
 Umbrella projects are supported. Each child app under `apps/` contributes one entry to the `apps` list, and `paths` is set to the longest common prefix of all child ebin directories.
 
-## Debug logging
-
-All debug output is written to `_build/safe/safe.log` via Elixir's `Logger`. The console is not cluttered with debug lines. To raise the log level in your project during development, add the following to `config/config.exs`:
-
-```elixir
-config :logger, level: :debug
-```
-
-The log file is created alongside the SAFE binary at `_build/safe/safe.log`.
 
 ## Exit codes
 
@@ -163,17 +144,8 @@ The log file is created alongside the SAFE binary at `_build/safe/safe.log`.
 | `1`  | Error (download failure, bad config, unsupported platform, …) |
 | `2`  | Vulnerabilities found                |
 
-## Supported platforms
 
-| Platform      | Architecture |
-|---------------|-------------|
-| Linux         | x86_64      |
-| macOS         | x86_64      |
-
-Windows is not yet supported.
 
 ## Related links
 
 - [SAFE Documentation](https://safe-docs.erlang-solutions.com/)
-- [SAFE rebar3 plugin](https://github.com/erlang-solutions/safe-rebar-plugin)
-- [Mix.Task documentation](https://hexdocs.pm/mix/Mix.Task.html)
