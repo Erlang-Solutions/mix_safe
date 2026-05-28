@@ -14,6 +14,7 @@ defmodule Mix.Tasks.Safe do
 
     * `fingerprint` — run the SAFE fingerprint phase
     * `analyse`     — run the SAFE analysis phase
+    * `sca`         — scan dependencies for known vulnerabilities (Supply Chain Analysis)
     * `download`    — download the SAFE binary only
     * `version`     — print plugin and binary versions
     * `help`        — print this help
@@ -22,6 +23,10 @@ defmodule Mix.Tasks.Safe do
 
       mix safe fingerprint
       mix safe analyse
+      mix safe sca
+      mix safe sca --lock-file /path/to/mix.lock
+      mix safe sca --advisories ./my-advisories/
+      mix safe sca --warnings-as-errors
       mix safe download
       mix safe version
 
@@ -38,21 +43,27 @@ defmodule Mix.Tasks.Safe do
 
   @impl Mix.Task
   def run(args) do
-    {_opts, rest, _} = OptionParser.parse(args, strict: [])
-
     project_dir = Mix.Project.project_file() |> Path.dirname() |> Path.expand()
 
     setup_file_logger(project_dir)
     Logger.debug("project_dir=#{project_dir}")
 
-    case rest do
-      ["fingerprint"] -> handle_fingerprint(project_dir)
-      ["analyse"] -> handle_analyse(project_dir)
-      ["download"] -> handle_download(project_dir)
-      ["version"] -> handle_version(project_dir)
-      ["help"] -> handle_help()
-      [] -> error_and_exit("No subcommand specified. Run `mix safe help` for usage.", 1)
-      [other | _] -> error_and_exit("Unrecognised subcommand: #{other}. Run `mix safe help`.", 1)
+    case args do
+      ["sca" | sca_args] ->
+        handle_sca(project_dir, sca_args)
+
+      _ ->
+        {_opts, rest, _} = OptionParser.parse(args, strict: [])
+
+        case rest do
+          ["fingerprint"] -> handle_fingerprint(project_dir)
+          ["analyse"] -> handle_analyse(project_dir)
+          ["download"] -> handle_download(project_dir)
+          ["version"] -> handle_version(project_dir)
+          ["help"] -> handle_help()
+          [] -> error_and_exit("No subcommand specified. Run `mix safe help` for usage.", 1)
+          [other | _] -> error_and_exit("Unrecognised subcommand: #{other}. Run `mix safe help`.", 1)
+        end
     end
   end
 
@@ -100,6 +111,32 @@ defmodule Mix.Tasks.Safe do
 
         {:error, {:analyse, n}} ->
           handle_error({:analyse, n})
+      end
+    else
+      {:error, reason} -> handle_error(reason)
+    end
+  end
+
+  defp handle_sca(project_dir, args) do
+    Logger.debug("running sca")
+
+    with :ok <- ensure_binary(project_dir) do
+      Safe.IO.print_status("* running SAFE SCA")
+
+      case Safe.Shell.run_safe_sca(project_dir, args) do
+        :ok ->
+          Safe.IO.print_status("* SAFE SCA complete - no vulnerabilities found")
+
+        {:error, {:sca, 2}} ->
+          Safe.IO.print_status("* SAFE SCA complete - vulnerabilities found.")
+          exit_with(2)
+
+        {:error, {:sca, 3}} ->
+          Safe.IO.print_status("* SAFE SCA - warnings treated as errors.")
+          exit_with(3)
+
+        {:error, {:sca, n}} ->
+          handle_error({:sca, n})
       end
     else
       {:error, reason} -> handle_error(reason)
@@ -278,6 +315,18 @@ defmodule Mix.Tasks.Safe do
 
   defp handle_error({:analyse, n}) do
     error_and_exit("SAFE analysis failed with exit code #{n}.", 1)
+  end
+
+  defp handle_error({:sca, 2}) do
+    error_and_exit("SAFE SCA complete - vulnerabilities found.", 2)
+  end
+
+  defp handle_error({:sca, 3}) do
+    error_and_exit("SAFE SCA - warnings treated as errors.", 3)
+  end
+
+  defp handle_error({:sca, n}) do
+    error_and_exit("SAFE SCA failed with exit code #{n}.", 1)
   end
 
   defp handle_error({:version_failed, n}) do

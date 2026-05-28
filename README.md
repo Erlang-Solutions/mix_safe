@@ -53,6 +53,7 @@ mix safe <subcommand> [options]
 |---------------|--------------------------------------------------|
 | `fingerprint` | Run the SAFE fingerprint phase                   |
 | `analyse`     | Run the SAFE analysis phase                      |
+| `sca`         | Scan dependencies for known vulnerabilities (Supply Chain Analysis) |
 | `download`    | Download the SAFE binary without running a scan  |
 | `version`     | Print the plugin version and the SAFE binary version |
 | `help`        | Print usage information                          |
@@ -86,6 +87,37 @@ $ mix safe analyse
 * Using config from .safe/config.json
 * running SAFE analysis
 * SAFE analysis complete - no vulnerabilities found
+```
+
+**3. Scan dependencies for known vulnerabilities**
+
+```
+$ mix safe sca
+* running SAFE SCA
+* SAFE SCA complete - no vulnerabilities found
+```
+
+Options:
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--lock-file PATH` | Path to `mix.lock` or `rebar.lock` | auto-detected |
+| `--advisories SOURCE` | Advisory source: GitHub URL, local dir, or git URL | `mirego/elixir-security-advisories` |
+| `--ignore-file PATH` | Path to SCA ignore file | `.safe/sca_ignore.json` |
+| `--warnings-as-errors` | Treat warnings (e.g. non-hex deps) as errors | off |
+
+Exit codes: `0` clean, `1` error, `2` vulnerabilities found, `3` warnings treated as errors.
+
+To suppress specific findings, create `.safe/sca_ignore.json`:
+
+```json
+{
+  "ignored_dependencies": [
+    {"package": "hackney", "advisory_ids": ["*"], "reason": "Not exploitable"},
+    {"package": "oidcc", "advisory_ids": ["GHSA-xxxx-xxxx-xxxx"]}
+  ],
+  "ignored_non_hex_packages": ["my_git_dep", "my_path_dep"]
+}
 ```
 
 ## Binary management
