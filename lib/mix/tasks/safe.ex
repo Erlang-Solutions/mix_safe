@@ -56,13 +56,26 @@ defmodule Mix.Tasks.Safe do
         {_opts, rest, _} = OptionParser.parse(args, strict: [])
 
         case rest do
-          ["fingerprint"] -> handle_fingerprint(project_dir)
-          ["analyse"] -> handle_analyse(project_dir)
-          ["download"] -> handle_download(project_dir)
-          ["version"] -> handle_version(project_dir)
-          ["help"] -> handle_help()
-          [] -> error_and_exit("No subcommand specified. Run `mix safe help` for usage.", 1)
-          [other | _] -> error_and_exit("Unrecognised subcommand: #{other}. Run `mix safe help`.", 1)
+          ["fingerprint"] ->
+            handle_fingerprint(project_dir)
+
+          ["analyse"] ->
+            handle_analyse(project_dir)
+
+          ["download"] ->
+            handle_download(project_dir)
+
+          ["version"] ->
+            handle_version(project_dir)
+
+          ["help"] ->
+            handle_help()
+
+          [] ->
+            error_and_exit("No subcommand specified. Run `mix safe help` for usage.", 1)
+
+          [other | _] ->
+            error_and_exit("Unrecognised subcommand: #{other}. Run `mix safe help`.", 1)
         end
     end
   end

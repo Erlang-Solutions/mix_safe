@@ -44,7 +44,8 @@ defmodule MixSafe.MixProject do
       {:certifi, "~> 2.0"},
       {:jason, "~> 1.4"},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
-      {:dialyxir, "~> 1.4", only: :dev, runtime: false}
+      {:dialyxir, "~> 1.4", only: :dev, runtime: false},
+      {:mock, "~> 0.3", only: :test}
     ]
   end
 

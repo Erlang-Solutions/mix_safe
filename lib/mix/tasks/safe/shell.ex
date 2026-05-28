@@ -45,7 +45,7 @@ defmodule Safe.Shell do
     Logger.debug("Running: #{binary_path} sca #{Enum.join(extra_args, " ")} in #{project_dir}")
 
     {_output, exit_code} =
-      System.cmd(
+      Safe.Utilities.System.cmd(
         binary_path,
         ["sca" | extra_args],
         cd: project_dir,
@@ -66,7 +66,7 @@ defmodule Safe.Shell do
     Logger.debug("Running: #{binary_path} #{subcommand} in #{dir}")
 
     {_output, exit_code} =
-      System.cmd(
+      Safe.Utilities.System.cmd(
         binary_path,
         [subcommand] ++ config_args ++ ["--project-root", project_dir],
         cd: dir,
