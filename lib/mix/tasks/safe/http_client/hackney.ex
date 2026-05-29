@@ -1,4 +1,5 @@
 defmodule Safe.HttpClient.Hackney do
+  @moduledoc false
   @behaviour Safe.HttpClient
 
   def get(url) do

@@ -139,12 +139,9 @@ defmodule Safe.Binary do
         Logger.debug("Using pinned SAFE version #{version} from safe.lock")
 
         with {:ok, body} <- http_get(@manifest_url),
-             {:ok, versions_map} <- Jason.decode(body) do
-          if Map.has_key?(versions_map, version) do
-            {:ok, version, versions_map}
-          else
-            {:error, {:locked_version_not_found, version}}
-          end
+             {:ok, versions_map} <- Jason.decode(body),
+             :ok <- validate_locked_version(versions_map, version) do
+          {:ok, version, versions_map}
         end
 
       {:error, reason}
@@ -160,6 +157,14 @@ defmodule Safe.Binary do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp validate_locked_version(versions_map, version) do
+    if Map.has_key?(versions_map, version) do
+      :ok
+    else
+      {:error, {:locked_version_not_found, version}}
     end
   end
 
@@ -190,30 +195,34 @@ defmodule Safe.Binary do
     with {:ok, tar_data} <- File.read(tar_path),
          {:ok, expected_checksum} <- get_platform_checksum(versions_map, version, platform_key) do
       actual_checksum = compute_checksum(tar_data)
+      extract_if_checksum_valid(tar_path, actual_checksum, expected_checksum, project_dir)
+    end
+  end
 
-      if verify_checksum(actual_checksum, expected_checksum) do
-        dest_dir = Path.join(project_dir, @build_dir)
+  defp extract_if_checksum_valid(tar_path, actual_checksum, expected_checksum, project_dir) do
+    if verify_checksum(actual_checksum, expected_checksum) do
+      dest_dir = Path.join(project_dir, @build_dir)
 
-        case extract_tar(tar_path, dest_dir) do
-          :ok ->
-            File.rm(tar_path)
-            bin_path = binary_path(project_dir)
-
-            if File.exists?(bin_path) do
-              write_binary_checksum(bin_path)
-              File.chmod!(bin_path, 0o755)
-              :ok
-            else
-              {:error, :binary_not_found_after_extract}
-            end
-
-          {:error, _} = err ->
-            err
-        end
-      else
-        File.rm(tar_path)
-        {:error, {:checksum_mismatch, tar_path}}
+      case extract_tar(tar_path, dest_dir) do
+        :ok -> finalize_binary(tar_path, project_dir)
+        {:error, _} = err -> err
       end
+    else
+      File.rm(tar_path)
+      {:error, {:checksum_mismatch, tar_path}}
+    end
+  end
+
+  defp finalize_binary(tar_path, project_dir) do
+    File.rm(tar_path)
+    bin_path = binary_path(project_dir)
+
+    if File.exists?(bin_path) do
+      write_binary_checksum(bin_path)
+      File.chmod!(bin_path, 0o755)
+      :ok
+    else
+      {:error, :binary_not_found_after_extract}
     end
   end
 

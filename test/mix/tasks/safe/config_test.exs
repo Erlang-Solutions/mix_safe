@@ -105,7 +105,7 @@ defmodule Safe.ConfigTest do
       assert is_binary(project["name"])
       assert project["type"] == "beam"
       assert is_list(project["apps"])
-      assert length(project["apps"]) >= 1
+      assert project["apps"] != []
       assert is_list(project["paths"])
     end
 

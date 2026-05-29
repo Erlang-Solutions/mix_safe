@@ -49,36 +49,19 @@ defmodule Mix.Tasks.Safe do
     Logger.debug("project_dir=#{project_dir}")
 
     case args do
-      ["sca" | sca_args] ->
-        handle_sca(project_dir, sca_args)
-
-      _ ->
-        {_opts, rest, _} = OptionParser.parse(args, strict: [])
-
-        case rest do
-          ["fingerprint"] ->
-            handle_fingerprint(project_dir)
-
-          ["analyse"] ->
-            handle_analyse(project_dir)
-
-          ["download"] ->
-            handle_download(project_dir)
-
-          ["version"] ->
-            handle_version(project_dir)
-
-          ["help"] ->
-            handle_help()
-
-          [] ->
-            error_and_exit("No subcommand specified. Run `mix safe help` for usage.", 1)
-
-          [other | _] ->
-            error_and_exit("Unrecognised subcommand: #{other}. Run `mix safe help`.", 1)
-        end
+      ["sca" | sca_args] -> handle_sca(project_dir, sca_args)
+      ["fingerprint" | _] -> handle_fingerprint(project_dir)
+      ["analyse" | _] -> handle_analyse(project_dir)
+      ["download" | _] -> handle_download(project_dir)
+      ["version" | _] -> handle_version(project_dir)
+      ["help" | _] -> handle_help()
+      [] -> error_and_exit("No subcommand specified. Run `mix safe help` for usage.", 1)
+      [other | _] -> error_and_exit("Unrecognised subcommand: #{other}. Run `mix safe help`.", 1)
     end
   end
+
+
+
 
   # ---------------------------------------------------------------------------
   # Subcommand handlers
@@ -133,26 +116,28 @@ defmodule Mix.Tasks.Safe do
   defp handle_sca(project_dir, args) do
     Logger.debug("running sca")
 
-    with :ok <- ensure_binary(project_dir) do
-      Safe.IO.print_status("* running SAFE SCA")
+    case ensure_binary(project_dir) do
+      :ok ->
+        Safe.IO.print_status("* running SAFE SCA")
 
-      case Safe.Shell.run_safe_sca(project_dir, args) do
-        :ok ->
-          Safe.IO.print_status("* SAFE SCA complete - no vulnerabilities found")
+        case Safe.Shell.run_safe_sca(project_dir, args) do
+          :ok ->
+            Safe.IO.print_status("* SAFE SCA complete - no vulnerabilities found")
 
-        {:error, {:sca, 2}} ->
-          Safe.IO.print_status("* SAFE SCA complete - vulnerabilities found.")
-          exit_with(2)
+          {:error, {:sca, 2}} ->
+            Safe.IO.print_status("* SAFE SCA complete - vulnerabilities found.")
+            exit_with(2)
 
-        {:error, {:sca, 3}} ->
-          Safe.IO.print_status("* SAFE SCA - warnings treated as errors.")
-          exit_with(3)
+          {:error, {:sca, 3}} ->
+            Safe.IO.print_status("* SAFE SCA - warnings treated as errors.")
+            exit_with(3)
 
-        {:error, {:sca, n}} ->
-          handle_error({:sca, n})
-      end
-    else
-      {:error, reason} -> handle_error(reason)
+          {:error, {:sca, n}} ->
+            handle_error({:sca, n})
+        end
+
+      {:error, reason} ->
+        handle_error(reason)
     end
   end
 
@@ -219,18 +204,22 @@ defmodule Mix.Tasks.Safe do
       if Safe.IO.bool_prompt("Would you like to proceed with this configuration?") do
         {:ok, {:config_json, config_json}}
       else
-        case Safe.Config.write_config(project_dir, config_json) do
-          :ok ->
-            Safe.IO.print_info(
-              "Config saved to .safe/config.json. Edit it and re-run `mix safe fingerprint`."
-            )
-
-            exit_with(0)
-
-          {:error, reason} ->
-            {:error, {:config_write_error, reason}}
-        end
+        save_config_and_exit(project_dir, config_json)
       end
+    end
+  end
+
+  defp save_config_and_exit(project_dir, config_json) do
+    case Safe.Config.write_config(project_dir, config_json) do
+      :ok ->
+        Safe.IO.print_info(
+          "Config saved to .safe/config.json. Edit it and re-run `mix safe fingerprint`."
+        )
+
+        exit_with(0)
+
+      {:error, reason} ->
+        {:error, {:config_write_error, reason}}
     end
   end
 
