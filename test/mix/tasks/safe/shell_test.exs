@@ -20,16 +20,16 @@ defmodule Safe.ShellTest do
       end
     end
 
-    test "returns {:error, {:fingerprint, 2}} when binary exits 2" do
+    test "returns {:error, {\"fingerprint\", 2}} when binary exits 2" do
       with_mock Safe.Utilities.System, stub_exit_code(2) do
-        assert {:error, {:fingerprint, 2}} =
+        assert {:error, {"fingerprint", 2}} =
                  Shell.run_safe("fingerprint", "/fake/dir", {:config_json, "{}"})
       end
     end
 
-    test "returns {:error, {:analyse, 1}} when binary exits 1" do
+    test "returns {:error, {\"analyse\", 1}} when binary exits 1" do
       with_mock Safe.Utilities.System, stub_exit_code(1) do
-        assert {:error, {:analyse, 1}} =
+        assert {:error, {"analyse", 1}} =
                  Shell.run_safe("analyse", "/fake/dir", {:config_json, "{}"})
       end
     end
@@ -117,9 +117,9 @@ defmodule Safe.ShellTest do
       end
     end
 
-    test "returns {:error, {:analyse, 1}} when binary exits 1" do
+    test "returns {:error, {\"analyse\", 1}} when binary exits 1" do
       with_mock Safe.Utilities.System, stub_exit_code(1) do
-        assert {:error, {:analyse, 1}} =
+        assert {:error, {"analyse", 1}} =
                  Shell.run_safe("analyse", "/fake/dir", {:config_path, "/some/config.json"})
       end
     end

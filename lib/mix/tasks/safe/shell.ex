@@ -76,7 +76,7 @@ defmodule Safe.Shell do
 
     case exit_code do
       0 -> :ok
-      code -> {:error, {String.to_atom(subcommand), code}}
+      code -> {:error, {subcommand, code}}
     end
   end
 end
