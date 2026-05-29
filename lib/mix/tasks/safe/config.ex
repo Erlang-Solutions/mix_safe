@@ -100,8 +100,7 @@ defmodule Safe.Config do
 
   defp get_apps(_project_dir) do
     if Mix.Project.umbrella?() do
-      Mix.Project.apps_paths()
-      |> Enum.map(fn {app_name, _path} ->
+      Enum.map(Mix.Project.apps_paths(), fn {app_name, _path} ->
         %{name: app_name}
       end)
     else

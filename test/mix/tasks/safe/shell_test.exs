@@ -44,7 +44,7 @@ defmodule Safe.ShellTest do
                  Shell.run_safe(
                    "fingerprint",
                    "/fake/dir",
-                   {:config_json, "{\n  \"key\": \"value\"\n}"}
+                   {:config_json, ~s({\n  "key": "value"\n})}
                  )
       end
     end

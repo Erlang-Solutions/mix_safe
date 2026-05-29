@@ -1,6 +1,4 @@
 defmodule Mix.Tasks.Safe do
-  use Mix.Task
-
   @shortdoc "SAFE security vulnerability scanner"
 
   @moduledoc """
@@ -37,6 +35,8 @@ defmodule Mix.Tasks.Safe do
 
   """
 
+  use Mix.Task
+
   require Logger
 
   @version Mix.Project.config()[:version]
@@ -59,9 +59,6 @@ defmodule Mix.Tasks.Safe do
       [other | _] -> error_and_exit("Unrecognised subcommand: #{other}. Run `mix safe help`.", 1)
     end
   end
-
-
-
 
   # ---------------------------------------------------------------------------
   # Subcommand handlers
@@ -172,7 +169,7 @@ defmodule Mix.Tasks.Safe do
   end
 
   defp handle_help do
-    Mix.Task.moduledoc(__MODULE__) |> Safe.IO.print_info()
+    __MODULE__ |> Mix.Task.moduledoc() |> Safe.IO.print_info()
   end
 
   # ---------------------------------------------------------------------------
@@ -195,9 +192,7 @@ defmodule Mix.Tasks.Safe do
 
     with {:ok, apps} <- discover_apps(),
          {:ok, config_json} <- Safe.Config.make_config(project_dir) do
-      Safe.IO.print_info(
-        "* Discovered #{length(apps)} app(s): #{inspect(Enum.map(apps, & &1.name))}"
-      )
+      Safe.IO.print_info("* Discovered #{length(apps)} app(s): #{inspect(Enum.map(apps, & &1.name))}")
 
       Safe.IO.print_info(config_json)
 
@@ -212,9 +207,7 @@ defmodule Mix.Tasks.Safe do
   defp save_config_and_exit(project_dir, config_json) do
     case Safe.Config.write_config(project_dir, config_json) do
       :ok ->
-        Safe.IO.print_info(
-          "Config saved to .safe/config.json. Edit it and re-run `mix safe fingerprint`."
-        )
+        Safe.IO.print_info("Config saved to .safe/config.json. Edit it and re-run `mix safe fingerprint`.")
 
         exit_with(0)
 
@@ -238,8 +231,7 @@ defmodule Mix.Tasks.Safe do
   defp discover_apps do
     if Mix.Project.umbrella?() do
       apps =
-        Mix.Project.apps_paths()
-        |> Enum.map(fn {name, _path} -> %{name: name} end)
+        Enum.map(Mix.Project.apps_paths(), fn {name, _path} -> %{name: name} end)
 
       {:ok, apps}
     else
@@ -363,7 +355,7 @@ defmodule Mix.Tasks.Safe do
   defp setup_file_logger(project_dir) do
     log_dir = Path.join([project_dir, "_build", "safe"])
     File.mkdir_p!(log_dir)
-    log_file = Path.join(log_dir, "safe.log") |> String.to_charlist()
+    log_file = log_dir |> Path.join("safe.log") |> String.to_charlist()
 
     case :logger.add_handler(:safe_file_handler, :logger_std_h, %{
            level: :debug,

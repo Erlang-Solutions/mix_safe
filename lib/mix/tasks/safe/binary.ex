@@ -43,7 +43,7 @@ defmodule Safe.Binary do
   common architectures map to "x86_64".
   """
   def detect_arch do
-    arch = :erlang.system_info(:system_architecture) |> to_string()
+    arch = :system_architecture |> :erlang.system_info() |> to_string()
     normalize_arch(arch)
   end
 
@@ -60,7 +60,8 @@ defmodule Safe.Binary do
 
   @doc "Computes a lowercase hex SHA-256 digest of `binary_data`."
   def compute_checksum(binary_data) do
-    :crypto.hash(:sha256, binary_data)
+    :sha256
+    |> :crypto.hash(binary_data)
     |> Base.encode16(case: :lower)
   end
 

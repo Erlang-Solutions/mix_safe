@@ -46,7 +46,8 @@ defmodule MixSafe.MixProject do
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:mock, "~> 0.3", only: :test}
+      {:mock, "~> 0.3", only: :test},
+      {:styler, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 
