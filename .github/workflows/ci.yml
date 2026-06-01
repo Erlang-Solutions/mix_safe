@@ -182,12 +182,16 @@ jobs:
           - os: ubuntu-24.04-arm
             elixir-version: 1.18.x
             otp-version: 26.x
-        
+
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: erlef/setup-beam@v1
+        env:
+          # ubuntu-24.04-arm runner reports ImageOS=ubuntu24-arm64, which
+          # setup-beam can't map; override only for that runner.
+          ImageOS: ${{ matrix.os == 'ubuntu-24.04-arm' && 'ubuntu24' || '' }}
         with:
           elixir-version: ${{ matrix.elixir-version }}
           otp-version: ${{ matrix.otp-version }}
