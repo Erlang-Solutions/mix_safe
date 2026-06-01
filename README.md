@@ -58,6 +58,17 @@ mix safe <subcommand> [options]
 | `version`     | Print the plugin version and the SAFE binary version |
 | `help`        | Print usage information                          |
 
+## Licensing
+
+| Capability | License requirement | Cost |
+|------------|---------------------|------|
+| `fingerprint` + `analyse` | Requires a SAFE license | Free for open source projects |
+| `sca` | No license required | Free for everyone |
+
+The `analyse` phase (and the `fingerprint` step that feeds it) runs the full SAFE static analysis engine, which requires a SAFE license. The license is free for open source projects.
+
+Dependency scanning via `sca` is completely free for everyone and needs no license.
+
 ## Typical workflow
 
 **1. Fingerprint your project**
