@@ -187,11 +187,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # setup-beam maps the runner via $ImageOS, but the ubuntu-24.04-arm
+      # runner reports ubuntu24-arm64, which it can't map. Override only for
+      # that runner; other runners keep their valid system ImageOS.
       - uses: erlef/setup-beam@v1
+        if: matrix.os != 'ubuntu-24.04-arm'
+        with:
+          elixir-version: ${{ matrix.elixir-version }}
+          otp-version: ${{ matrix.otp-version }}
+
+      - uses: erlef/setup-beam@v1
+        if: matrix.os == 'ubuntu-24.04-arm'
         env:
-          # ubuntu-24.04-arm runner reports ImageOS=ubuntu24-arm64, which
-          # setup-beam can't map; override only for that runner.
-          ImageOS: ${{ matrix.os == 'ubuntu-24.04-arm' && 'ubuntu24' || '' }}
+          ImageOS: ubuntu24
         with:
           elixir-version: ${{ matrix.elixir-version }}
           otp-version: ${{ matrix.otp-version }}
