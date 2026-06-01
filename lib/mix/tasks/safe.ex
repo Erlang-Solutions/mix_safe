@@ -75,11 +75,11 @@ defmodule Mix.Tasks.Safe do
         :ok ->
           Safe.IO.print_status("* SAFE fingerprint complete")
 
-        {:error, {:fingerprint, 2}} ->
+        {:error, {"fingerprint", 2}} ->
           Safe.IO.print_status("* SAFE fingerprint complete - vulnerabilities found.")
           exit_with(2)
 
-        {:error, {:fingerprint, n}} ->
+        {:error, {"fingerprint", n}} ->
           handle_error({:fingerprint, n})
       end
     else
@@ -98,11 +98,11 @@ defmodule Mix.Tasks.Safe do
         :ok ->
           Safe.IO.print_status("* SAFE analysis complete - no vulnerabilities found")
 
-        {:error, {:analyse, 2}} ->
+        {:error, {"analyse", 2}} ->
           Safe.IO.print_status("* SAFE analysis complete - vulnerabilities found.")
           exit_with(2)
 
-        {:error, {:analyse, n}} ->
+        {:error, {"analyse", n}} ->
           handle_error({:analyse, n})
       end
     else
