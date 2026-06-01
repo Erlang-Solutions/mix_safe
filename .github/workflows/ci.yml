@@ -114,6 +114,8 @@ jobs:
 
       - name: Run analyse
         run: mix safe analyse
+        env:
+          SAFE_LICENSE: ${{ secrets.SAFE_LICENSE }}
 
   dialyzer:
     name: Dialyzer
