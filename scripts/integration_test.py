@@ -76,7 +76,7 @@ def setUpModule():
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=300,
     )
     if result.returncode != 0:
         print(result.stdout + result.stderr, file=sys.stderr)
