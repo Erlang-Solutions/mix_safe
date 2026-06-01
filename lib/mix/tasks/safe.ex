@@ -155,6 +155,11 @@ defmodule Mix.Tasks.Safe do
     if File.exists?(bin_path) do
       dir = Path.dirname(bin_path)
 
+      # No injection risk: `bin_path` is a fixed, checksum-verified path
+      # (`_build/safe/safe`) and the args are the static list `["version"]`.
+      # System.cmd/3 with an arg list spawns the process directly via an
+      # Erlang port with no shell, so no shell metacharacters are interpreted.
+      # safe-ignore System.cmd/3
       case System.cmd(bin_path, ["version"],
              cd: dir,
              stderr_to_stdout: true,
