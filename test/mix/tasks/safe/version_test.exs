@@ -83,7 +83,7 @@ defmodule Safe.VersionTest do
     end
 
     test "ignores versions that do not parse as semver" do
-      map = Map.merge(@versions_map, %{"not-a-version" => %{}})
+      map = Map.put(@versions_map, "not-a-version", %{})
       assert {:ok, "1.5.1"} = Version.resolve_version(map)
     end
   end

@@ -1,4 +1,5 @@
 defmodule Safe.HttpClient.Stub do
+  @moduledoc false
   @behaviour Safe.HttpClient
 
   @impl true

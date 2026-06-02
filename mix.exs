@@ -4,7 +4,7 @@ defmodule MixSafe.MixProject do
   def project do
     [
       app: :mix_safe,
-      version: "1.0.0",
+      version: "1.1.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: "SAFE security vulnerability scanner for Elixir/Mix projects",
@@ -44,7 +44,10 @@ defmodule MixSafe.MixProject do
       {:certifi, "~> 2.0"},
       {:jason, "~> 1.4"},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
-      {:dialyxir, "~> 1.4", only: :dev, runtime: false}
+      {:dialyxir, "~> 1.4", only: :dev, runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:mock, "~> 0.3", only: :test},
+      {:styler, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 

@@ -9,6 +9,8 @@ defmodule Safe.BinaryTest do
   # compute_checksum/1
   # ---------------------------------------------------------------------------
 
+  alias Safe.HttpClient.Stub
+
   describe "compute_checksum/1" do
     test "returns lowercase hex SHA-256 of the input" do
       expected = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -152,7 +154,7 @@ defmodule Safe.BinaryTest do
       manifest = Jason.encode!(%{"1.5.1" => %{platform_key => checksum}})
       dl_url = download_url("1.5.1", os, arch)
 
-      Safe.HttpClient.Stub.set(fn
+      Stub.set(fn
         ^dl_url -> {:ok, tar_data}
         _url -> {:ok, manifest}
       end)
@@ -174,7 +176,7 @@ defmodule Safe.BinaryTest do
       manifest = Jason.encode!(%{"1.5.2" => %{platform_key => checksum}})
       dl_url = download_url("1.5.2", os, arch)
 
-      Safe.HttpClient.Stub.set(fn
+      Stub.set(fn
         ^dl_url -> {:ok, tar_data}
         _url -> {:ok, manifest}
       end)
@@ -195,7 +197,7 @@ defmodule Safe.BinaryTest do
       manifest = Jason.encode!(%{"1.5.1" => %{platform_key => checksum}})
       dl_url = download_url("1.5.1", os, arch)
 
-      Safe.HttpClient.Stub.set(fn
+      Stub.set(fn
         ^dl_url -> {:ok, tar_data}
         _url -> {:ok, manifest}
       end)
@@ -209,14 +211,14 @@ defmodule Safe.BinaryTest do
       Safe.Version.write_lock(dir, "9.9.9")
       manifest = Jason.encode!(%{"1.5.1" => %{}})
 
-      Safe.HttpClient.Stub.set(fn _url -> {:ok, manifest} end)
+      Stub.set(fn _url -> {:ok, manifest} end)
 
       assert {:error, {:locked_version_not_found, "9.9.9"}} =
                Binary.ensure_binary_available(dir)
     end
 
     test "manifest HTTP error propagates", %{project_dir: dir} do
-      Safe.HttpClient.Stub.set(fn _url -> {:error, {:http_error, 503}} end)
+      Stub.set(fn _url -> {:error, {:http_error, 503}} end)
 
       assert {:error, {:http_error, 503}} = Binary.ensure_binary_available(dir)
     end
@@ -226,7 +228,7 @@ defmodule Safe.BinaryTest do
       manifest = Jason.encode!(%{"1.5.1" => %{platform_key => "somechecksum"}})
       dl_url = download_url("1.5.1", os, arch)
 
-      Safe.HttpClient.Stub.set(fn
+      Stub.set(fn
         ^dl_url -> {:error, {:http_error, 404}}
         _url -> {:ok, manifest}
       end)
@@ -246,7 +248,7 @@ defmodule Safe.BinaryTest do
       manifest = Jason.encode!(%{"1.5.1" => %{platform_key => "wrongchecksum000"}})
       dl_url = download_url("1.5.1", os, arch)
 
-      Safe.HttpClient.Stub.set(fn
+      Stub.set(fn
         ^dl_url -> {:ok, tar_data}
         _url -> {:ok, manifest}
       end)
@@ -259,7 +261,7 @@ defmodule Safe.BinaryTest do
     test "no compatible version in manifest returns error", %{project_dir: dir} do
       manifest = Jason.encode!(%{"2.0.0" => %{}, "1.4.0" => %{}})
 
-      Safe.HttpClient.Stub.set(fn _url -> {:ok, manifest} end)
+      Stub.set(fn _url -> {:ok, manifest} end)
 
       assert {:error, :no_compatible_version} = Binary.ensure_binary_available(dir)
     end
@@ -269,7 +271,7 @@ defmodule Safe.BinaryTest do
     } do
       File.mkdir_p!(Path.join(dir, "safe.lock"))
 
-      Safe.HttpClient.Stub.set(fn _url -> {:ok, "{}"} end)
+      Stub.set(fn _url -> {:ok, "{}"} end)
 
       assert {:error, {:lock_read_error, _}} = Binary.ensure_binary_available(dir)
     end
@@ -283,7 +285,7 @@ defmodule Safe.BinaryTest do
       manifest = Jason.encode!(%{"1.5.1" => %{platform_key => "somechecksum"}})
       dl_url = download_url("1.5.1", os, arch)
 
-      Safe.HttpClient.Stub.set(fn
+      Stub.set(fn
         ^dl_url -> {:error, {:http_error, 503}}
         _url -> {:ok, manifest}
       end)
@@ -294,7 +296,7 @@ defmodule Safe.BinaryTest do
     end
 
     test "request failure (connection error) returns request_failed", %{project_dir: dir} do
-      Safe.HttpClient.Stub.set(fn _url -> {:error, {:request_failed, :econnrefused}} end)
+      Stub.set(fn _url -> {:error, {:request_failed, :econnrefused}} end)
 
       assert {:error, {:request_failed, :econnrefused}} =
                Binary.ensure_binary_available(dir)
@@ -311,7 +313,7 @@ defmodule Safe.BinaryTest do
       manifest = Jason.encode!(%{"1.5.1" => %{platform_key => checksum}})
       dl_url = download_url("1.5.1", os, arch)
 
-      Safe.HttpClient.Stub.set(fn
+      Stub.set(fn
         ^dl_url -> {:ok, garbage}
         _url -> {:ok, manifest}
       end)
@@ -331,7 +333,7 @@ defmodule Safe.BinaryTest do
       manifest = Jason.encode!(%{"1.5.1" => %{other_platform => "somehash"}})
       dl_url = download_url("1.5.1", os, arch)
 
-      Safe.HttpClient.Stub.set(fn
+      Stub.set(fn
         ^dl_url -> {:ok, tar_data}
         _url -> {:ok, manifest}
       end)

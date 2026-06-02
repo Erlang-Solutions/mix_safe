@@ -1,6 +1,4 @@
 defmodule Mix.Tasks.Safe do
-  use Mix.Task
-
   @shortdoc "SAFE security vulnerability scanner"
 
   @moduledoc """
@@ -14,6 +12,7 @@ defmodule Mix.Tasks.Safe do
 
     * `fingerprint` — run the SAFE fingerprint phase
     * `analyse`     — run the SAFE analysis phase
+    * `sca`         — scan dependencies for known vulnerabilities (Supply Chain Analysis)
     * `download`    — download the SAFE binary only
     * `version`     — print plugin and binary versions
     * `help`        — print this help
@@ -22,6 +21,10 @@ defmodule Mix.Tasks.Safe do
 
       mix safe fingerprint
       mix safe analyse
+      mix safe sca
+      mix safe sca --lock-file /path/to/mix.lock
+      mix safe sca --advisories ./my-advisories/
+      mix safe sca --warnings-as-errors
       mix safe download
       mix safe version
 
@@ -32,25 +35,26 @@ defmodule Mix.Tasks.Safe do
 
   """
 
+  use Mix.Task
+
   require Logger
 
   @version Mix.Project.config()[:version]
 
   @impl Mix.Task
   def run(args) do
-    {_opts, rest, _} = OptionParser.parse(args, strict: [])
-
     project_dir = Mix.Project.project_file() |> Path.dirname() |> Path.expand()
 
     setup_file_logger(project_dir)
     Logger.debug("project_dir=#{project_dir}")
 
-    case rest do
-      ["fingerprint"] -> handle_fingerprint(project_dir)
-      ["analyse"] -> handle_analyse(project_dir)
-      ["download"] -> handle_download(project_dir)
-      ["version"] -> handle_version(project_dir)
-      ["help"] -> handle_help()
+    case args do
+      ["sca" | sca_args] -> handle_sca(project_dir, sca_args)
+      ["fingerprint" | _] -> handle_fingerprint(project_dir)
+      ["analyse" | _] -> handle_analyse(project_dir)
+      ["download" | _] -> handle_download(project_dir)
+      ["version" | _] -> handle_version(project_dir)
+      ["help" | _] -> handle_help()
       [] -> error_and_exit("No subcommand specified. Run `mix safe help` for usage.", 1)
       [other | _] -> error_and_exit("Unrecognised subcommand: #{other}. Run `mix safe help`.", 1)
     end
@@ -71,11 +75,11 @@ defmodule Mix.Tasks.Safe do
         :ok ->
           Safe.IO.print_status("* SAFE fingerprint complete")
 
-        {:error, {:fingerprint, 2}} ->
+        {:error, {"fingerprint", 2}} ->
           Safe.IO.print_status("* SAFE fingerprint complete - vulnerabilities found.")
           exit_with(2)
 
-        {:error, {:fingerprint, n}} ->
+        {:error, {"fingerprint", n}} ->
           handle_error({:fingerprint, n})
       end
     else
@@ -94,15 +98,43 @@ defmodule Mix.Tasks.Safe do
         :ok ->
           Safe.IO.print_status("* SAFE analysis complete - no vulnerabilities found")
 
-        {:error, {:analyse, 2}} ->
+        {:error, {"analyse", 2}} ->
           Safe.IO.print_status("* SAFE analysis complete - vulnerabilities found.")
           exit_with(2)
 
-        {:error, {:analyse, n}} ->
+        {:error, {"analyse", n}} ->
           handle_error({:analyse, n})
       end
     else
       {:error, reason} -> handle_error(reason)
+    end
+  end
+
+  defp handle_sca(project_dir, args) do
+    Logger.debug("running sca")
+
+    case ensure_binary(project_dir) do
+      :ok ->
+        Safe.IO.print_status("* running SAFE SCA")
+
+        case Safe.Shell.run_safe_sca(project_dir, args) do
+          :ok ->
+            Safe.IO.print_status("* SAFE SCA complete - no vulnerabilities found")
+
+          {:error, {:sca, 2}} ->
+            Safe.IO.print_status("* SAFE SCA complete - vulnerabilities found.")
+            exit_with(2)
+
+          {:error, {:sca, 3}} ->
+            Safe.IO.print_status("* SAFE SCA - warnings treated as errors.")
+            exit_with(3)
+
+          {:error, {:sca, n}} ->
+            handle_error({:sca, n})
+        end
+
+      {:error, reason} ->
+        handle_error(reason)
     end
   end
 
@@ -123,6 +155,11 @@ defmodule Mix.Tasks.Safe do
     if File.exists?(bin_path) do
       dir = Path.dirname(bin_path)
 
+      # No injection risk: `bin_path` is a fixed, checksum-verified path
+      # (`_build/safe/safe`) and the args are the static list `["version"]`.
+      # System.cmd/3 with an arg list spawns the process directly via an
+      # Erlang port with no shell, so no shell metacharacters are interpreted.
+      # safe-ignore System.cmd/3
       case System.cmd(bin_path, ["version"],
              cd: dir,
              stderr_to_stdout: true,
@@ -137,7 +174,7 @@ defmodule Mix.Tasks.Safe do
   end
 
   defp handle_help do
-    Mix.Task.moduledoc(__MODULE__) |> Safe.IO.print_info()
+    __MODULE__ |> Mix.Task.moduledoc() |> Safe.IO.print_info()
   end
 
   # ---------------------------------------------------------------------------
@@ -160,27 +197,27 @@ defmodule Mix.Tasks.Safe do
 
     with {:ok, apps} <- discover_apps(),
          {:ok, config_json} <- Safe.Config.make_config(project_dir) do
-      Safe.IO.print_info(
-        "* Discovered #{length(apps)} app(s): #{inspect(Enum.map(apps, & &1.name))}"
-      )
+      Safe.IO.print_info("* Discovered #{length(apps)} app(s): #{inspect(Enum.map(apps, & &1.name))}")
 
       Safe.IO.print_info(config_json)
 
       if Safe.IO.bool_prompt("Would you like to proceed with this configuration?") do
         {:ok, {:config_json, config_json}}
       else
-        case Safe.Config.write_config(project_dir, config_json) do
-          :ok ->
-            Safe.IO.print_info(
-              "Config saved to .safe/config.json. Edit it and re-run `mix safe fingerprint`."
-            )
-
-            exit_with(0)
-
-          {:error, reason} ->
-            {:error, {:config_write_error, reason}}
-        end
+        save_config_and_exit(project_dir, config_json)
       end
+    end
+  end
+
+  defp save_config_and_exit(project_dir, config_json) do
+    case Safe.Config.write_config(project_dir, config_json) do
+      :ok ->
+        Safe.IO.print_info("Config saved to .safe/config.json. Edit it and re-run `mix safe fingerprint`.")
+
+        exit_with(0)
+
+      {:error, reason} ->
+        {:error, {:config_write_error, reason}}
     end
   end
 
@@ -199,8 +236,7 @@ defmodule Mix.Tasks.Safe do
   defp discover_apps do
     if Mix.Project.umbrella?() do
       apps =
-        Mix.Project.apps_paths()
-        |> Enum.map(fn {name, _path} -> %{name: name} end)
+        Enum.map(Mix.Project.apps_paths(), fn {name, _path} -> %{name: name} end)
 
       {:ok, apps}
     else
@@ -280,6 +316,18 @@ defmodule Mix.Tasks.Safe do
     error_and_exit("SAFE analysis failed with exit code #{n}.", 1)
   end
 
+  defp handle_error({:sca, 2}) do
+    error_and_exit("SAFE SCA complete - vulnerabilities found.", 2)
+  end
+
+  defp handle_error({:sca, 3}) do
+    error_and_exit("SAFE SCA - warnings treated as errors.", 3)
+  end
+
+  defp handle_error({:sca, n}) do
+    error_and_exit("SAFE SCA failed with exit code #{n}.", 1)
+  end
+
   defp handle_error({:version_failed, n}) do
     error_and_exit("SAFE binary `version` command failed with exit code #{n}.", 1)
   end
@@ -312,7 +360,7 @@ defmodule Mix.Tasks.Safe do
   defp setup_file_logger(project_dir) do
     log_dir = Path.join([project_dir, "_build", "safe"])
     File.mkdir_p!(log_dir)
-    log_file = Path.join(log_dir, "safe.log") |> String.to_charlist()
+    log_file = log_dir |> Path.join("safe.log") |> String.to_charlist()
 
     case :logger.add_handler(:safe_file_handler, :logger_std_h, %{
            level: :debug,

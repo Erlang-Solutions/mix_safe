@@ -28,7 +28,7 @@ defmodule Safe.IO do
         false
 
       response ->
-        response |> String.trim() |> String.downcase() |> then(&(&1 in ["", "y", "yes"]))
+        response |> String.trim() |> String.downcase() |> Kernel.in(["", "y", "yes"])
     end
   end
 

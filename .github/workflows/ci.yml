@@ -34,6 +34,89 @@ jobs:
       - name: Check formatting
         run: mix format --check-formatted
 
+  credo:
+    name: Credo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18'
+          otp-version: '27'
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-otp-27-elixir-1.18-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-27-elixir-1.18-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run Credo
+        run: mix credo --strict
+
+  sca:
+    name: SCA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18'
+          otp-version: '27'
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-otp-27-elixir-1.18-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-27-elixir-1.18-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run SCA
+        run: mix safe sca --warnings-as-errors
+
+  analyse:
+    name: Analyse
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18'
+          otp-version: '27'
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-otp-27-elixir-1.18-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-27-elixir-1.18-mix-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run analyse
+        run: mix safe analyse
+        env:
+          SAFE_LICENSE: ${{ secrets.SAFE_LICENSE }}
+
   dialyzer:
     name: Dialyzer
     runs-on: ubuntu-latest
@@ -99,12 +182,24 @@ jobs:
           - os: ubuntu-24.04-arm
             elixir-version: 1.18.x
             otp-version: 26.x
-        
+
 
     steps:
       - uses: actions/checkout@v4
 
+      # setup-beam maps the runner via $ImageOS, but the ubuntu-24.04-arm
+      # runner reports ubuntu24-arm64, which it can't map. Override only for
+      # that runner; other runners keep their valid system ImageOS.
       - uses: erlef/setup-beam@v1
+        if: matrix.os != 'ubuntu-24.04-arm'
+        with:
+          elixir-version: ${{ matrix.elixir-version }}
+          otp-version: ${{ matrix.otp-version }}
+
+      - uses: erlef/setup-beam@v1
+        if: matrix.os == 'ubuntu-24.04-arm'
+        env:
+          ImageOS: ubuntu24
         with:
           elixir-version: ${{ matrix.elixir-version }}
           otp-version: ${{ matrix.otp-version }}
@@ -155,6 +250,9 @@ jobs:
 
       - name: Install dependencies
         run: mix deps.get
+
+      - name: Compile plugin
+        run: mix compile
 
       - name: Run integration tests
         run: python3 scripts/integration_test.py -v
