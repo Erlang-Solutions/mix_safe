@@ -30,7 +30,6 @@ defmodule MixSafe.MixProject do
 
   defp package do
     [
-      organization: "esl_security",
       maintainers: ["Erlang Solutions"],
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/Erlang-Solutions/mix_safe"},
