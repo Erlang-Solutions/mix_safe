@@ -20,7 +20,7 @@
     align="left"
   />
 </picture>
-A Mix task that brings [SAFE](https://safe-docs.erlang-solutions.com/) security vulnerability scanning to Elixir/Mix projects. ó
+A Mix task that brings [SAFE](https://safe-docs.erlang-solutions.com/) security vulnerability scanning to Elixir/Mix projects.
 
 
 ## Installation
